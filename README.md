@@ -18,6 +18,7 @@
 | Input validation & error handling | implemented, tested |
 | LLM `analyze_evidence` (opsional, `LLM_ENABLED=true`) | implemented, tested (mock) + diverifikasi live 1x |
 | Campus Twin OSM + scenario → Campus Operations assessment → IT Helpdesk follow-up | implemented; synthetic/planning data, verification details in workflow docs |
+| OpenCV 5 video-to-zone state → agent trace | implemented in a feature branch; tests/CI review pending, not yet merged |
 | Upload dokumen, workflow penuh role lainnya | planned |
 | API/DB/Testing/Development docs | implemented |
 
@@ -29,11 +30,13 @@ investigasi IT Helpdesk dari AP tidak online. Alternatif: `/workspace/operations
 Panduan, angka baseline, konfigurasi tanpa biaya LLM, dan keterbatasan ada di
 [`docs/WORKFLOWS.md`](docs/WORKFLOWS.md#demo-campus-twin--campus-operations--it-helpdesk).
 
-## Vision Twin — Computer Vision MVP
+## Vision Twin — OpenCV 5 video MVP
 
-Route baru: `/workspace/vision-twin`. Operator dapat mengunggah satu frame JPEG/PNG/WebP, memilih zona kampus, lalu menjalankan deteksi pejalan kaki berbasis OpenCV. Respons memuat jumlah deteksi, bounding box, gambar beranotasi, detector, timestamp, dan provenance. Endpoint memakai OpenCV HOG sebagai baseline tanpa bobot eksternal; model YOLO ONNX dapat dikonfigurasi melalui `VISION_MODEL_PATH`.
+Route `/workspace/vision-twin` kini menjalankan vertical slice berbasis video. Backend menegakkan OpenCV 5.x, membaca video pendek, mengambil sampel frame, mendeteksi pejalan kaki, memetakan titik bawah bounding box ke polygon zona, dan menyimpan observasi ke SQLite. State zona, event, trace keputusan agent, frame bukti, job history, dan draf tiket yang memerlukan human review tersedia setelah refresh.
 
-**Batasan:** ini analisis gambar statis, bukan stream CCTV live; tidak mendeteksi identitas, tidak menghasilkan occupancy terkalibrasi, tidak menyimpan frame/riwayat, dan belum memperbarui layer occupancy Campus Twin. Lihat [docs/VISION_TWIN.md](docs/VISION_TWIN.md) dan [docs/API.md](docs/API.md#vision-twin--uploaded-pedestrian-frame-analysis).
+Detector default adalah OpenCV HOG (baseline klasik tanpa bobot eksternal); model COCO YOLO ONNX kompatibel dapat dikonfigurasi lewat `VISION_MODEL_PATH`. Konfigurasikan polygon dan ambang berdasarkan video kamera uji. Polygon default hanya membagi frame kiri/kanan dan bukan peta kampus terkalibrasi.
+
+**Batasan MVP:** video diproses secara batch setelah diunggah, bukan CCTV live. Hitungan frame bukan orang unik atau occupancy keselamatan yang terkalibrasi. Agent memakai policy deterministik; ia tidak memanggil LLM atau mengubah sistem eksternal. Draf tiket harus disetujui/ditolak manusia. Artifact, state, event, dan trace disimpan lokal; kebijakan retensi otomatis, evaluasi ground-truth, dan integrasi kamera nyata belum selesai. Lihat [docs/VISION_TWIN.md](docs/VISION_TWIN.md), [docs/API.md](docs/API.md), dan [docs/WORKFLOWS.md](docs/WORKFLOWS.md).
 
 ## Fitur IT Helpdesk
 
