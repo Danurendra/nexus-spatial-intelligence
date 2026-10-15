@@ -756,6 +756,15 @@ def process_video_file(
         raise VisionPipelineError(safe_message, 500, error_code) from exc
 
 
+def get_recent_jobs(limit: int = 10) -> list[dict[str, Any]]:
+    with connect_db() as db:
+        rows = db.execute(
+            """SELECT job_id, status, source_label, original_filename, opencv_version, detector,
+                      created_at, finished_at, sampled_frames, error_code, error_message
+               FROM vision_jobs ORDER BY created_at DESC LIMIT ?""",
+            (max(1, min(50, limit)),),
+        ).fetchall()
+    return _dict_rows(rows)
 def get_job(job_id: str) -> dict[str, Any] | None:
     with connect_db() as db:
         row = db.execute("SELECT * FROM vision_jobs WHERE job_id=?", (job_id,)).fetchone()
