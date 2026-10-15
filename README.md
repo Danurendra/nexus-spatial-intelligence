@@ -14,11 +14,11 @@
 | CORS untuk frontend + token metrics | implemented, tested |
 | Approval gate (`waiting_for_approval` + approve/reject) | implemented, tested |
 | Normalisasi `task_runs`/`execution_steps` | implemented, tested |
-| CI (GitHub Actions: compile, data check, migrasi, pytest) | implemented (workflow) |
+| CI (GitHub Actions: OpenCV 5 smoke, backend pytest, frontend typecheck/unit/build) | passed on branch commit `8e975517` (120 passed, 1 skipped; frontend build passed) |
 | Input validation & error handling | implemented, tested |
 | LLM `analyze_evidence` (opsional, `LLM_ENABLED=true`) | implemented, tested (mock) + diverifikasi live 1x |
 | Campus Twin OSM + scenario → Campus Operations assessment → IT Helpdesk follow-up | implemented; synthetic/planning data, verification details in workflow docs |
-| OpenCV 5 video-to-zone state → agent trace | implemented in a feature branch; tests/CI review pending, not yet merged |
+| OpenCV 5 video-to-zone state → agent trace | implemented and CI-verified on `feat/opencv-vision-twin`; AWS deployment/evaluation pending, PR not merged |
 | Upload dokumen, workflow penuh role lainnya | planned |
 | API/DB/Testing/Development docs | implemented |
 
