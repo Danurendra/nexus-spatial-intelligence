@@ -88,7 +88,9 @@ pip install -r requirements.txt
 
 # 2. Konfigurasi environment.
 cp .env.example .env
-# Isi DATABASE_URL, DINUSNEXUS_API_KEY, dan (opsional) OPENAI_API_KEY di .env.
+# Ganti POSTGRES_PASSWORD dan DINUSNEXUS_API_KEY dengan nilai acak sebelum memakai Compose.
+# Isi DATABASE_URL untuk backend lokal; konfigurasi Compose membangun DATABASE_URL dari POSTGRES_*.
+# OPENAI_API_KEY hanya perlu diisi jika fitur LLM dipakai.
 # JANGAN commit .env.
 ```
 
