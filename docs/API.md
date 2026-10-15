@@ -27,7 +27,7 @@ Respons sukses berisi people_count, koordinat bounding box dalam piksel, frame b
 
 Detector default adalah **OpenCV HOG pedestrian detector** (baseline klasik; tidak memerlukan bobot eksternal). Untuk model detector yang lebih kuat, VISION_MODEL_PATH dapat menunjuk ke ekspor YOLOv8/YOLOv5 COCO ONNX yang kompatibel dengan OpenCV DNN; threshold konfigurasi VISION_CONFIDENCE_THRESHOLD default 0.25. Ekspor model ONNX harus disediakan dan divalidasi oleh operator. Endpoint tidak mengunduh model secara otomatis.
 
-Error utama: 401 auth invalid, 413 unggahan/resolusi terlalu besar, 415 tipe konten tidak didukung, 400 file bukan gambar valid, 503 model/pipeline tidak tersedia. Frame tidak ditulis ke disk atau database, tidak membangun histori, dan tidak otomatis memperbarui occupancy atau status gedung; pengaitan zone_id hanya konteks yang dikirim pemakai. Jumlah deteksi bukan identitas unik maupun occupancy terkalibrasi. Pertimbangkan izin, retensi, keamanan data, dan batas penggunaan sebelum menghubungkan kamera sebenarnya.
+Error utama: 401 auth invalid, 413 unggahan/resolusi terlalu besar, 415 tipe konten tidak didukung, 400 file bukan gambar valid, 503 model/pipeline tidak tersedia. Frame tidak dipersistenkan sebagai file aplikasi/database atau histori task; parser multipart dapat menggunakan buffer temporer selama request. Endpoint tidak membangun histori dan tidak otomatis memperbarui occupancy/status gedung; pengaitan zone_id hanya konteks yang dikirim pemakai. Jumlah deteksi bukan identitas unik maupun occupancy terkalibrasi. Pertimbangkan izin, retensi, keamanan data, dan batas penggunaan sebelum menghubungkan kamera sebenarnya.
 
 
 > Status: **implemented and tested** for the IT Helpdesk deterministic flow.
