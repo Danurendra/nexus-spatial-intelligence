@@ -1,34 +1,109 @@
 # API Reference — DinusNexus Backend
 
 
-## Vision Twin — Uploaded pedestrian frame analysis
+## Vision Twin — OpenCV 5 video pipeline
+
+Semua endpoint di bagian Vision Twin memerlukan autentikasi workspace yang sama (X-API-Key atau bearer session). Video jobs berjalan secara sinkron untuk klip pendek; input video bersifat temporer, sementara frame bukti, summary, observasi, state, event, trace, dan draf tiket disimpan di SQLite.
+
+### GET /api/vision/opencv-version
+
+Mengembalikan versi cv2.__version__, status kompatibilitas, major version yang diwajibkan, dan apakah informasi build tersedia. Bila VISION_REQUIRE_OPENCV5=true (default), job video ditolak kecuali runtime OpenCV melaporkan major version 5.
+
+### GET /api/vision/zones
+
+Mengembalikan konfigurasi polygon awal berlabel DEMO. Koordinat polygon_normalized adalah x/y dalam rentang 0–1 relatif ke dimensi frame video, bukan koordinat peta geografis atau denah kampus. Operator harus mengkalibrasikan polygon kamera sebelum menafsirkan occupancy.
+
+### POST /api/vision/videos
+
+Menganalisis satu klip video unggahan, menyimpan evidence/state, dan menjalankan policy agent.
+
+| Field | Jenis | Wajib | Batas |
+|---|---|---|---|
+| file | file multipart | ya | MP4, MOV, AVI, WebM, MPEG; maksimum 50 MiB |
+| source_label | string | tidak | 1–100 karakter; default Uploaded video |
+| zones_json | JSON string | tidak | 1–4 zona; default polygon DEMO |
+| sample_interval_seconds | integer | tidak | 1–30 detik; default 1 |
+
+Contoh pemanggilan dengan zona demo default:
+
+~~~bash
+curl -X POST http://127.0.0.1:8000/api/vision/videos \
+  -H "X-API-Key: $DINUSNEXUS_API_KEY" \
+  -F "file=@licensed-demo.avi" \
+  -F "source_label=Hallway experiment" \
+  -F "sample_interval_seconds=1"
+~~~
+
+Contoh zones_json kustom:
+
+~~~json
+[
+  {
+    "zone_id": "corridor-a",
+    "name": "Koridor A",
+    "polygon_normalized": [[0.03, 0.08], [0.49, 0.08], [0.49, 0.97], [0.03, 0.97]],
+    "occupancy_threshold": 3
+  }
+]
+~~~
+
+Setiap polygon perlu 3–20 titik, zone_id harus unik, threshold berupa integer 1–1000, dan maksimal empat zona. Titik anchor setiap deteksi adalah tengah-bawah bounding box. Objek ditempatkan pada zona pertama yang polygon-nya mengandung anchor itu; deteksi di luar semua zona tidak ikut hitungan zona.
+
+Batas proses: durasi maksimum 5 menit, 60 frame sampel maksimum, frame di-resize agar sisi terpanjang maksimum 1280 piksel, dan frame awal/seluruh rangkaian tetap melalui decoder video OpenCV. Checksum SHA-256 input dicatat. File video yang diunggah dihapus dari file temporer sesudah request, baik berhasil maupun gagal.
+
+Respons sukses berisi job_id, checksum, versi OpenCV, nama detector, metadata sumber video, interval sampling aktual, jumlah frame sampel, ringkasan tiap zona (jumlah terakhir, puncak, ambang, status), sampel frame, daftar event, trace agent, draf tiket, URL frame bukti, dan keterbatasan interpretasi. data_label=OBSERVED_FROM_UPLOADED_VIDEO menyatakan hasil berasal dari video yang diunggah, bukan telemetri live.
+
+### State, evidence, agent trace, dan human review
+
+| Method | Path | Fungsi |
+|---|---|---|
+| GET | /api/vision/twin/state | State tersimpan per zona; status dapat menjadi stale saat observasi lama |
+| GET | /api/vision/jobs?limit=10 | Riwayat job terbaru |
+| GET | /api/vision/jobs/{job_id} | Ringkasan job tersimpan |
+| GET | /api/vision/jobs/{job_id}/frame | Frame anotasi puncak yang tersimpan |
+| GET | /api/vision/jobs/{job_id}/agent-runs | Trace keputusan dan output tool |
+| GET | /api/vision/events?limit=50 | Event dari zona yang melewati ambang |
+| GET | /api/vision/tickets?limit=50 | Draf tiket dan keputusan review |
+| POST | /api/vision/tickets/{ticket_id}/decision | Catat persetujuan/penolakan manusia |
+
+Payload keputusan tiket:
+
+~~~json
+{
+  "decision": "approve",
+  "reviewer_label": "Campus operator",
+  "note": "Checked the uploaded evidence"
+}
+~~~
+
+Agent menggunakan policy deterministik. Jika tak ada sampel yang mencapai threshold, ia mencatat no_action. Saat ambang terlampaui, agent memanggil pemeriksaan jendela lanjutan. Jika sampel lanjutan masih melampaui threshold, agent membandingkan jendela dan membuat draf berstatus pending_approval; selain itu ia meminta human review. Approval hanya mengubah status tiket demo, tidak memanggil ticketing eksternal atau mengontrol fasilitas.
+
+### Penyimpanan dan konfigurasi
+
+| Variabel | Default | Fungsi |
+|---|---|---|
+| VISION_REQUIRE_OPENCV5 | true | Tolak job video ketika runtime bukan OpenCV 5.x |
+| VISION_MODEL_PATH | kosong | Path file ONNX COCO YOLO yang kompatibel dengan OpenCV DNN; kosong berarti HOG |
+| VISION_CONFIDENCE_THRESHOLD | 0.25 | Threshold score model ONNX, bukan calibration score okupansi |
+| VISION_TWIN_DB_PATH | artifacts/vision_twin.sqlite3 | SQLite untuk job, observations, state, events, agent runs, dan tiket |
+| VISION_ARTIFACT_DIR | artifacts/vision_frames | Frame bukti JPG |
+| VISION_STATE_STALE_SECONDS | 600 | Usia maksimal state sebelum API menandainya stale |
+
+Dependency yang dipin untuk OpenCV adalah opencv-contrib-python-headless==5.0.0.93, karena pipeline mewajibkan runtime OpenCV 5 dan baseline HOG. Hanya instalasi ini yang menentukan versi aktual; verifikasi lewat endpoint /api/vision/opencv-version.
+
+Status/error umum: 401 autentikasi gagal, 413 unggahan/resolusi/durasi melewati batas, 415 format yang tidak didukung, 422 konfigurasi zona atau video invalid, 503 OpenCV/model tidak kompatibel/tersedia, serta 409 draf tiket sudah direview.
+
+### Batas klaim
+
+Input video dianalisis sebagai batch dan bukan RTSP/ONVIF/CCTV live. HOG tidak menghasilkan confidence probabilistik terkalibrasi. Hitungan pada frame bukan orang unik, bukan ground truth, dan bukan occupancy untuk keputusan keselamatan. Polygon default hanya konfigurasi demo. Histori dan frame tersimpan lokal; retention otomatis, integrasi kamera–gedung terverifikasi, evaluasi ground truth, serta deployment AWS belum dinyatakan selesai. Policy agent tidak menggunakan LLM pada implementasi ini; trace memperlihatkan evaluasi rule dan bukti yang dipakai, bukan chain-of-thought privat.
+
+## Vision Twin — Single-frame diagnostic endpoint
 
 ### POST /api/vision/pedestrians
 
-Memproses **satu gambar yang diunggah**, bukan stream CCTV. Endpoint memerlukan autentikasi yang sama dengan workspace (X-API-Key atau bearer session) dan menerima multipart/form-data.
+Endpoint diagnostik yang tetap menerima satu gambar JPEG/PNG/WebP (maksimum 8 MiB). Ini bukan jalur utama MVP video; tidak membuat histori, tidak memperbarui state zona, dan tidak mengeluarkan agent trace.
 
-| Field | Type | Wajib | Batas |
-|---|---|---|---|
-| file | file | yes | JPEG, PNG, WebP; maksimum 8 MiB |
-| zone_id | string | yes | 1–80 karakter; konteks zona yang dipilih user |
-| camera_label | string | no | 1–80 karakter; default Uploaded frame |
-
-Contoh:
-
-~~~bash
-curl -X POST http://127.0.0.1:8000/api/vision/pedestrians \
-  -H "X-API-Key: $DINUSNEXUS_API_KEY" \
-  -F "file=@frame.jpg" \
-  -F "zone_id=zone-A1" \
-  -F "camera_label=Koridor utara"
-~~~
-
-Respons sukses berisi people_count, koordinat bounding box dalam piksel, frame beranotasi sebagai JPEG data URL, detector, timestamp, ukuran gambar, dan daftar keterbatasan. data_label=OBSERVED_FROM_UPLOADED_IMAGE menjelaskan provenance: observasi dari satu unggahan, bukan telemetry live.
-
-Detector default adalah **OpenCV HOG pedestrian detector** (baseline klasik; tidak memerlukan bobot eksternal). Untuk model detector yang lebih kuat, VISION_MODEL_PATH dapat menunjuk ke ekspor YOLOv8/YOLOv5 COCO ONNX yang kompatibel dengan OpenCV DNN; threshold konfigurasi VISION_CONFIDENCE_THRESHOLD default 0.25. Ekspor model ONNX harus disediakan dan divalidasi oleh operator. Endpoint tidak mengunduh model secara otomatis.
-
-Error utama: 401 auth invalid, 413 unggahan/resolusi terlalu besar, 415 tipe konten tidak didukung, 400 file bukan gambar valid, 503 model/pipeline tidak tersedia. Frame tidak dipersistenkan sebagai file aplikasi/database atau histori task; parser multipart dapat menggunakan buffer temporer selama request. Endpoint tidak membangun histori dan tidak otomatis memperbarui occupancy/status gedung; pengaitan zone_id hanya konteks yang dikirim pemakai. Jumlah deteksi bukan identitas unik maupun occupancy terkalibrasi. Pertimbangkan izin, retensi, keamanan data, dan batas penggunaan sebelum menghubungkan kamera sebenarnya.
-
+Fields: file wajib; zone_id wajib sebagai konteks yang diberikan pengguna; camera_label opsional. Respons mengandung bounding boxes per-frame, people_count, gambar JPEG beranotasi, nama detector, timestamp, dan keterbatasan. data_label=OBSERVED_FROM_UPLOADED_IMAGE menunjukkan asal output.
 
 > Status: **implemented and tested** for the IT Helpdesk deterministic flow.
 > Base URL in local development: `http://127.0.0.1:8000`.
