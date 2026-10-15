@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+from contextlib import closing
 import json
 import math
 import os
@@ -257,7 +258,7 @@ def create_job(
     cv_version: str,
     zone_config: list[dict[str, Any]],
 ) -> None:
-    with connect_db() as db:
+    with closing(connect_db()) as db:
         db.execute(
             """INSERT INTO vision_jobs
             (job_id, status, source_label, original_filename, input_sha256, opencv_version,
@@ -367,6 +368,7 @@ def _summarize_agent_for_zone(
     job_id: str,
     zone: dict[str, Any],
     samples: list[dict[str, Any]],
+    input_sha256: str,
 ) -> tuple[dict[str, Any] | None, dict[str, Any], dict[str, Any] | None]:
     threshold = zone["occupancy_threshold"]
     zone_id = zone["zone_id"]
@@ -424,7 +426,7 @@ def _summarize_agent_for_zone(
             "peak_count": peak,
             "threshold": threshold,
             "current_count": current,
-            "input_sha256": None,
+            "input_sha256": input_sha256,
         }
         db.execute(
             """INSERT INTO vision_events
@@ -670,7 +672,7 @@ def process_video_file(
         ticket_results: list[dict[str, Any]] = []
         with connect_db() as db:
             for zone in zones:
-                event, run, ticket = _summarize_agent_for_zone(db, job_id, zone, samples)
+                event, run, ticket = _summarize_agent_for_zone(db, job_id, zone, samples, input_sha256)
                 if event:
                     event_results.append(event)
                 agent_runs.append(run)
