@@ -542,7 +542,7 @@ def _summarize_agent_for_zone(
             (step_id, run_id, order_index, tool_name, inputs_json, output_json, reason, status, duration_ms)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (step["step_id"], run_id, step["order"], step["tool"], json.dumps(step["inputs"]),
-             json.dumps(step["output"]), step["reason"], step["status"], None),
+             json.dumps(step["output"]), step["reason"], step["status"], step["duration_ms"]),
         )
     db.commit()
 
@@ -614,7 +614,7 @@ def process_video_file(
     sampled_count = 0
 
     try:
-        with connect_db() as db:
+        with closing(connect_db()) as db:
             while True:
                 ok, raw_frame = capture.read()
                 if not ok:
@@ -676,7 +676,7 @@ def process_video_file(
         event_results: list[dict[str, Any]] = []
         agent_runs: list[dict[str, Any]] = []
         ticket_results: list[dict[str, Any]] = []
-        with connect_db() as db:
+        with closing(connect_db()) as db:
             for zone in zones:
                 event, run, ticket = _summarize_agent_for_zone(db, job_id, zone, samples, input_sha256)
                 if event:
@@ -752,7 +752,7 @@ def process_video_file(
         elapsed = time.perf_counter() - started_perf
         error_code = exc.code if isinstance(exc, VisionPipelineError) else "VISION_PROCESSING_FAILED"
         safe_message = str(exc) if isinstance(exc, VisionPipelineError) else "Pemrosesan video gagal. Periksa format file dan konfigurasi detector."
-        with connect_db() as db:
+        with closing(connect_db()) as db:
             db.execute(
                 """UPDATE vision_jobs SET status='failed', finished_at=?, duration_seconds=?,
                    sampled_frames=?, error_code=?, error_message=? WHERE job_id=?""",
@@ -765,7 +765,7 @@ def process_video_file(
 
 
 def get_recent_jobs(limit: int = 10) -> list[dict[str, Any]]:
-    with connect_db() as db:
+    with closing(connect_db()) as db:
         rows = db.execute(
             """SELECT job_id, status, source_label, original_filename, opencv_version, detector,
                       created_at, finished_at, sampled_frames, error_code, error_message
@@ -774,7 +774,7 @@ def get_recent_jobs(limit: int = 10) -> list[dict[str, Any]]:
         ).fetchall()
     return _dict_rows(rows)
 def get_job(job_id: str) -> dict[str, Any] | None:
-    with connect_db() as db:
+    with closing(connect_db()) as db:
         row = db.execute("SELECT * FROM vision_jobs WHERE job_id=?", (job_id,)).fetchone()
         if row is None:
             return None
@@ -795,7 +795,7 @@ def get_job(job_id: str) -> dict[str, Any] | None:
 
 
 def get_preview_path(job_id: str) -> Path | None:
-    with connect_db() as db:
+    with closing(connect_db()) as db:
         row = db.execute("SELECT peak_frame_path FROM vision_jobs WHERE job_id=? AND status='completed'", (job_id,)).fetchone()
     if row is None or not row["peak_frame_path"]:
         return None
@@ -813,7 +813,7 @@ def get_twin_state() -> list[dict[str, Any]]:
     except ValueError:
         pass
     now = datetime.now(timezone.utc)
-    with connect_db() as db:
+    with closing(connect_db()) as db:
         rows = db.execute("SELECT * FROM vision_zone_state ORDER BY zone_id").fetchall()
     result: list[dict[str, Any]] = []
     for row in rows:
@@ -836,13 +836,13 @@ def get_twin_state() -> list[dict[str, Any]]:
 
 
 def get_events(limit: int = 50) -> list[dict[str, Any]]:
-    with connect_db() as db:
+    with closing(connect_db()) as db:
         rows = db.execute("SELECT * FROM vision_events ORDER BY created_at DESC LIMIT ?", (max(1, min(200, limit)),)).fetchall()
     return [_event_from_row(row) for row in rows]
 
 
 def get_agent_run_for_job(job_id: str) -> list[dict[str, Any]]:
-    with connect_db() as db:
+    with closing(connect_db()) as db:
         rows = db.execute("SELECT * FROM vision_agent_runs WHERE job_id=? ORDER BY started_at", (job_id,)).fetchall()
     result = []
     for row in rows:
@@ -853,7 +853,7 @@ def get_agent_run_for_job(job_id: str) -> list[dict[str, Any]]:
 
 
 def get_tickets(limit: int = 50) -> list[dict[str, Any]]:
-    with connect_db() as db:
+    with closing(connect_db()) as db:
         rows = db.execute("SELECT * FROM vision_tickets ORDER BY created_at DESC LIMIT ?", (max(1, min(200, limit)),)).fetchall()
     return [_ticket_from_row(row) for row in rows]
 
@@ -864,7 +864,7 @@ def decide_ticket(ticket_id: str, decision: str, reviewer_label: str, note: str 
     label = reviewer_label.strip()[:80] or "Campus operator"
     safe_note = (note or "").strip()[:500] or None
     new_status = "approved" if decision == "approve" else "rejected"
-    with connect_db() as db:
+    with closing(connect_db()) as db:
         row = db.execute("SELECT * FROM vision_tickets WHERE ticket_id=?", (ticket_id,)).fetchone()
         if row is None:
             return None
