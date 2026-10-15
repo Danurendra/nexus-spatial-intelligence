@@ -377,9 +377,14 @@ def _summarize_agent_for_zone(
     run_id = str(uuid.uuid4())
     started = utc_now()
     steps: list[dict[str, Any]] = []
+    last_step_perf = time.perf_counter()
 
     def record(tool: str, inputs: dict[str, Any], output: dict[str, Any], reason: str) -> None:
+        nonlocal last_step_perf
         index = len(steps) + 1
+        step_perf = time.perf_counter()
+        duration_ms = round((step_perf - last_step_perf) * 1000.0, 3)
+        last_step_perf = step_perf
         step = {
             "step_id": str(uuid.uuid4()),
             "order": index,
@@ -389,6 +394,7 @@ def _summarize_agent_for_zone(
             "output": output,
             "reason": reason,
             "timestamp": utc_now(),
+            "duration_ms": duration_ms,
         }
         steps.append(step)
 
