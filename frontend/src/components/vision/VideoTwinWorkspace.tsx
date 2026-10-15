@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
-import { AlertTriangle, CheckCircle2, Clock3, Film, RefreshCw, ScanLine, ShieldCheck, TriangleAlert, Users, Workflow, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock3, Film, RefreshCw, ScanLine, ShieldCheck, Users, Workflow, XCircle } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -33,7 +33,7 @@ function formatTime(value?: string | null): string {
 }
 function decisionLabel(value: string): string {
   const labels: Record<string, string> = { no_action: 'Tidak perlu tindakan', human_review_required: 'Perlu tinjauan manusia', draft_ticket_pending_approval: 'Draf tiket menunggu persetujuan' };
-  return labels[value] ?? value.replaceAll('_', ' ');
+  return labels[value] ?? value.replace(/_/g, ' ');
 }
 function statusVariant(value: string): 'success' | 'warning' | 'error' | 'info' | 'secondary' {
   if (['normal', 'completed', 'approved'].includes(value)) return 'success';
@@ -215,7 +215,7 @@ export function VideoTwinWorkspace() {
           <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
             <Metric icon={<Users className="h-4 w-4" />} label="Zona" value={String(job?.zone_summary.length ?? zoneState.length)} detail="State terakhir tersimpan" />
             <Metric icon={<Film className="h-4 w-4" />} label="Frame sampel" value={job ? String(job.sampled_frames) : '—'} detail={job ? job.source_width + ' × ' + job.source_height + 'px' : 'Belum ada job aktif'} />
-            <Metric icon={<TriangleAlert className="h-4 w-4" />} label="Event aktif" value={String(activeEvents.length)} detail="Review / tiket draft" />
+            <Metric icon={<AlertTriangle className="h-4 w-4" />} label="Event aktif" value={String(activeEvents.length)} detail="Review / tiket draft" />
             <Metric icon={<ShieldCheck className="h-4 w-4" />} label="Tiket menunggu" value={String(pendingTickets.length)} detail="Butuh keputusan manusia" />
           </div>
 
@@ -247,7 +247,7 @@ export function VideoTwinWorkspace() {
 
       <div className="grid gap-5 xl:grid-cols-2">
         <Card className="overflow-hidden"><div className="flex items-center gap-2 border-b border-border px-5 py-4"><TriangleAlert className="h-4 w-4 text-amber-600" /><div><h2 className="font-semibold text-textPrimary">Event history</h2><p className="mt-1 text-xs text-textSecondary">Evidence pemicu dan status approval.</p></div></div><div className="divide-y divide-border">
-          {events.length ? events.map((event) => <div key={event.event_id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3"><div><p className="text-sm font-medium text-textPrimary">{event.zone_id} · peak {event.occupancy_peak}/{event.occupancy_threshold}</p><p className="mt-1 text-xs text-textSecondary">{event.event_id.slice(0, 12)} · {formatTime(event.created_at)}</p></div><Badge variant={statusVariant(event.status)}>{event.status.replaceAll('_', ' ')}</Badge></div>) : <div className="p-5"><EmptyMessage text="Event muncul saat observasi video melewati ambang zona." /></div>}
+          {events.length ? events.map((event) => <div key={event.event_id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3"><div><p className="text-sm font-medium text-textPrimary">{event.zone_id} · peak {event.occupancy_peak}/{event.occupancy_threshold}</p><p className="mt-1 text-xs text-textSecondary">{event.event_id.slice(0, 12)} · {formatTime(event.created_at)}</p></div><Badge variant={statusVariant(event.status)}>{event.status.replace(/_/g, ' ')}</Badge></div>) : <div className="p-5"><EmptyMessage text="Event muncul saat observasi video melewati ambang zona." /></div>}
         </div></Card>
         <Card className="overflow-hidden"><div className="flex items-center gap-2 border-b border-border px-5 py-4"><Clock3 className="h-4 w-4 text-indigo-600" /><div><h2 className="font-semibold text-textPrimary">Recent video jobs</h2><p className="mt-1 text-xs text-textSecondary">Job dan ringkasan tetap tersedia setelah reload.</p></div></div><div className="divide-y divide-border">
           {recentJobs.length ? recentJobs.map((item) => <div key={item.job_id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3"><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-textPrimary">{item.original_filename}</p><p className="mt-1 text-xs text-textSecondary">{item.job_id.slice(0, 12)} · {item.sampled_frames} frames · {formatTime(item.created_at)}</p></div><div className="flex items-center gap-2"><Badge variant={statusVariant(item.status)}>{item.status}</Badge>{item.status === 'completed' && <Button size="sm" variant="outline" onClick={() => void loadExistingJob(item.job_id)}>Load</Button>}</div></div>) : <div className="p-5"><EmptyMessage text="Belum ada job video tersimpan." /></div>}
