@@ -217,6 +217,17 @@ def connect_db() -> sqlite3.Connection:
             decision TEXT NOT NULL,
             steps_json TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS vision_agent_steps (
+            step_id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL REFERENCES vision_agent_runs(run_id) ON DELETE CASCADE,
+            order_index INTEGER NOT NULL,
+            tool_name TEXT NOT NULL,
+            inputs_json TEXT NOT NULL,
+            output_json TEXT NOT NULL,
+            reason TEXT NOT NULL,
+            status TEXT NOT NULL,
+            duration_ms REAL
+        );
         CREATE TABLE IF NOT EXISTS vision_tickets (
             ticket_id TEXT PRIMARY KEY,
             event_id TEXT NOT NULL REFERENCES vision_events(event_id) ON DELETE CASCADE,
