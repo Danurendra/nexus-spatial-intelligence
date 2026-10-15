@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/Card';
 import { OperationsWorkspace } from '@/components/operations/OperationsWorkspace';
 import { AgentWorkspace } from '@/components/agents/AgentWorkspace';
 import { TasksWorkspace } from '@/components/tasks/TasksWorkspace';
+import { VideoTwinWorkspace } from '@/components/vision/VideoTwinWorkspace';
 
 const sections: Record<string, { title: string; description: string; status: 'available' | 'planned' }> = {
   operations: {
@@ -52,6 +53,7 @@ export default function WorkspaceSectionPage({ params }: { params: { section: st
   if (params.section === 'operations') return <Suspense fallback={<p role="status">Memuat Operations...</p>}><OperationsWorkspace /></Suspense>;
   if (params.section === 'agents') return <AgentWorkspace />;
   if (params.section === 'tasks') return <TasksWorkspace />;
+  if (params.section === 'vision-twin') return <VideoTwinWorkspace />;
   if (params.section === 'approvals') return <TasksWorkspace initialStatusFilter="waiting_for_approval" />;
 
   const section = sections[params.section] ?? {

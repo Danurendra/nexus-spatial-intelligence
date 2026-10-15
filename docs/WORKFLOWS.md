@@ -135,6 +135,29 @@ RBAC per-worker, queue, streaming UI progress event, sensor live, pemetaan venue
 OSM → AP yang terverifikasi, atau eksekusi fasilitas/jaringan otomatis. Hasil
 tersimpan dapat dibaca setelah refresh; kontrol input/preview tidak dipersistenkan.
 
+
+## Vision Twin: video → spatial state → agent trace
+
+Route `/workspace/vision-twin` menjalankan pipeline video berbasis OpenCV 5.x dan mensyaratkan major version 5 ketika `VISION_REQUIRE_OPENCV5=true`.
+
+1. Operator mengunggah video MP4/MOV/AVI/WebM/MPEG (maksimum 50 MiB dan 5 menit), memberi label sumber, memilih interval sampling, lalu mengatur 1–4 polygon zona dalam koordinat frame ternormalisasi 0–1.
+2. Backend memvalidasi tipe/ukuran file, membuat checksum SHA-256, menulis video ke file temporer, lalu menghapus file input setelah job selesai atau gagal.
+3. Pipeline membaca video melalui OpenCV, sampling maksimal 60 frame, mengecilkan sisi frame bila perlu, menjalankan detector (HOG default atau model ONNX COCO yang dikonfigurasi), dan memetakan titik tengah-bawah bounding box ke polygon zona pertama yang cocok.
+4. Frame teranotasi disimpan sebagai evidence. SQLite menyimpan job, observasi per zona/frame, state zona terakhir, event, agent run/step, dan draf tiket.
+5. Policy agent membaca state, memeriksa sampel lanjutan, membandingkan jendela jika okupansi tetap melampaui ambang, lalu membuat draf tiket yang menunggu keputusan petugas. Bila bukti berubah atau jendela lanjutan tidak tersedia, agent meminta human review; bila tak ada ambang terlampaui, agent mencatat no-action.
+6. UI menampilkan versi OpenCV yang terpasang, checksum, ukuran/durasi video, hitungan terakhir/puncak zona, waktu observasi, frame bukti, step trace, histori job/event, dan antrean persetujuan.
+7. Endpoint persetujuan hanya mencatat approve/reject ke database demo. Tidak ada integrasi ticketing eksternal atau kontrol fasilitas.
+
+Endpoint inti:
+- `POST /api/vision/videos`: proses video dan update twin state.
+- `GET /api/vision/twin/state`: membaca occupancy/state per zona terakhir; status menjadi stale jika tak diperbarui dalam waktu konfigurasi.
+- `GET /api/vision/jobs` dan `GET /api/vision/jobs/{job_id}`: riwayat job.
+- `GET /api/vision/jobs/{job_id}/frame`: frame bukti puncak.
+- `GET /api/vision/jobs/{job_id}/agent-runs`: trace agent.
+- `GET /api/vision/events`, `GET /api/vision/tickets`, dan `POST /api/vision/tickets/{ticket_id}/decision`: event serta human review.
+
+Batasan yang harus dijelaskan saat demo: input adalah video rekaman batch, bukan stream CCTV live. Polygon default hanya demo dan harus dikalibrasi terhadap perspektif kamera. HOG tidak mengembalikan confidence terkalibrasi. Hitungan bukan identitas unik atau occupancy keselamatan. Data dan frame berada di volume lokal/SQLite; retention otomatis, evaluasi ground-truth, mapping kamera–gedung terverifikasi, streaming live, dan integrasi sistem produksi belum tersedia.
+
 ## Operations: investigasi IT dari halaman workspace
 
 Route `/workspace/operations` mempertahankan event planner. Tab **Investigasi IT**

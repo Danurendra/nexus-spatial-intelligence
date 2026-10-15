@@ -25,6 +25,20 @@ Pembagian kerja paralel untuk tiga anggota tim, ownership, checkpoint, dan tata 
 4. Add token usage capture and task metrics.
 5. Add tests for expected cases, missing data, invalid input, provider failure, and tool failure.
 
+### P1 add-on — Vision Twin video MVP
+
+- [x] Pin OpenCV contrib Python distribution to 5.0.0.93 and add a runtime OpenCV 5.x version gate for video jobs.
+- [x] Add authenticated video upload with format/size/duration/resolution checks and configurable frame sampling.
+- [x] Add normalized polygon zones, person-to-zone mapping, annotated evidence frames, and SQLite job/observation/twin state.
+- [x] Add deterministic agent trace whose next tool depends on evidence (follow-up window, comparison, draft ticket, human review, or no action).
+- [x] Add human approve/reject endpoint for draft tickets; no external actions are executed.
+- [x] Add workspace UI for video upload, version gate, state, frame evidence, job history, events, agent trace, and approval queue.
+- [x] Add API tests for version gate, upload authentication/validation, state persistence, triggered/no-trigger scenarios, trace, frame retrieval, and ticket review.
+- [x] Run CI and review actual test/type-check/build outcomes before merge: commit `8e975517`, OpenCV 5 smoke passed, backend 120 passed/1 skipped, frontend typecheck/unit tests/production build passed.
+- [ ] Calibrate polygons with licensed test clips and evaluate against manually annotated ground truth.
+- [ ] Deploy the vision pipeline on AWS and verify its public health/demo endpoint.
+- [ ] Add retention policy, bounded job concurrency, and verified camera-to-building mapping before real camera integration.
+
 ### P2 — Extend campus workers
 
 After the IT Helpdesk workflow is stable, extend shared services to document search, PMB, Quality Assurance, or other role workflows based on time and data availability. Prioritization among these additional workers: `TBD`.

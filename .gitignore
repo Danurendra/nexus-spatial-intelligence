@@ -50,5 +50,7 @@ playwright-report/
 
 # --- Cloud / deploy ---
 .azure/
-
-
+# Vision Twin runtime data: never commit uploaded media, generated frames, or local state.
+/artifacts/vision_twin.sqlite3
+/artifacts/vision_twin.sqlite3-*
+/artifacts/vision_frames/

@@ -14,10 +14,11 @@
 | CORS untuk frontend + token metrics | implemented, tested |
 | Approval gate (`waiting_for_approval` + approve/reject) | implemented, tested |
 | Normalisasi `task_runs`/`execution_steps` | implemented, tested |
-| CI (GitHub Actions: compile, data check, migrasi, pytest) | implemented (workflow) |
+| CI (GitHub Actions: OpenCV 5 smoke, backend pytest, frontend typecheck/unit/build) | passed on branch commit `8e975517` (120 passed, 1 skipped; frontend build passed) |
 | Input validation & error handling | implemented, tested |
 | LLM `analyze_evidence` (opsional, `LLM_ENABLED=true`) | implemented, tested (mock) + diverifikasi live 1x |
 | Campus Twin OSM + scenario → Campus Operations assessment → IT Helpdesk follow-up | implemented; synthetic/planning data, verification details in workflow docs |
+| OpenCV 5 video-to-zone state → agent trace | implemented and CI-verified on `feat/opencv-vision-twin`; AWS deployment/evaluation pending, PR not merged |
 | Upload dokumen, workflow penuh role lainnya | planned |
 | API/DB/Testing/Development docs | implemented |
 
@@ -28,6 +29,14 @@ event**. Assessment backend menyimpan risiko/evidence/history dan dapat membuat
 investigasi IT Helpdesk dari AP tidak online. Alternatif: `/workspace/operations`.
 Panduan, angka baseline, konfigurasi tanpa biaya LLM, dan keterbatasan ada di
 [`docs/WORKFLOWS.md`](docs/WORKFLOWS.md#demo-campus-twin--campus-operations--it-helpdesk).
+
+## Vision Twin — OpenCV 5 video MVP
+
+Route `/workspace/vision-twin` kini menjalankan vertical slice berbasis video. Backend menegakkan OpenCV 5.x, membaca video pendek, mengambil sampel frame, mendeteksi pejalan kaki, memetakan titik bawah bounding box ke polygon zona, dan menyimpan observasi ke SQLite. State zona, event, trace keputusan agent, frame bukti, job history, dan draf tiket yang memerlukan human review tersedia setelah refresh.
+
+Detector default adalah OpenCV HOG (baseline klasik tanpa bobot eksternal); model COCO YOLO ONNX kompatibel dapat dikonfigurasi lewat `VISION_MODEL_PATH`. Konfigurasikan polygon dan ambang berdasarkan video kamera uji. Polygon default hanya membagi frame kiri/kanan dan bukan peta kampus terkalibrasi.
+
+**Batasan MVP:** video diproses secara batch setelah diunggah, bukan CCTV live. Hitungan frame bukan orang unik atau occupancy keselamatan yang terkalibrasi. Agent memakai policy deterministik; ia tidak memanggil LLM atau mengubah sistem eksternal. Draf tiket harus disetujui/ditolak manusia. Artifact, state, event, dan trace disimpan lokal; kebijakan retensi otomatis, evaluasi ground-truth, dan integrasi kamera nyata belum selesai. Lihat [docs/VISION_TWIN.md](docs/VISION_TWIN.md), [docs/API.md](docs/API.md), dan [docs/WORKFLOWS.md](docs/WORKFLOWS.md).
 
 ## Fitur IT Helpdesk
 
@@ -79,7 +88,9 @@ pip install -r requirements.txt
 
 # 2. Konfigurasi environment.
 cp .env.example .env
-# Isi DATABASE_URL, DINUSNEXUS_API_KEY, dan (opsional) OPENAI_API_KEY di .env.
+# Ganti POSTGRES_PASSWORD dan DINUSNEXUS_API_KEY dengan nilai acak sebelum memakai Compose.
+# Isi DATABASE_URL untuk backend lokal; konfigurasi Compose membangun DATABASE_URL dari POSTGRES_*.
+# OPENAI_API_KEY hanya perlu diisi jika fitur LLM dipakai.
 # JANGAN commit .env.
 ```
 

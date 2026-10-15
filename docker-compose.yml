@@ -1,20 +1,17 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: dinusnexus-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: dinusnexus
-      POSTGRES_PASSWORD: dinuspassword123
-      POSTGRES_DB: dinusnexus
+      POSTGRES_USER: ${POSTGRES_USER:-dinusnexus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the local .env file}
+      POSTGRES_DB: ${POSTGRES_DB:-dinusnexus}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dinusnexus -d dinusnexus"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dinusnexus} -d ${POSTGRES_DB:-dinusnexus}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,15 +20,21 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: dinusnexus-backend
     restart: unless-stopped
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://dinusnexus:dinuspassword123@postgres:5432/dinusnexus
-      - DINUSNEXUS_API_KEY=06431bfc490640038e877c92db706484107b30932b9e48f584ed9030b68f3638
-      - CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
-      - LLM_ENABLED=false
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-dinusnexus}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the local .env file}@postgres:5432/${POSTGRES_DB:-dinusnexus}
+      DINUSNEXUS_API_KEY: ${DINUSNEXUS_API_KEY:?Set DINUSNEXUS_API_KEY in the local .env file}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      LLM_ENABLED: ${LLM_ENABLED:-false}
+      VISION_REQUIRE_OPENCV5: ${VISION_REQUIRE_OPENCV5:-true}
+      VISION_TWIN_DB_PATH: /app/artifacts/vision_twin.sqlite3
+      VISION_ARTIFACT_DIR: /app/artifacts/vision_frames
+      VISION_MODEL_PATH: ${VISION_MODEL_PATH:-}
+      VISION_CONFIDENCE_THRESHOLD: ${VISION_CONFIDENCE_THRESHOLD:-0.25}
+    volumes:
+      - visiondata:/app/artifacts
     depends_on:
       postgres:
         condition: service_healthy
@@ -41,9 +44,7 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
-        - NEXT_PUBLIC_DINUSNEXUS_API_KEY=06431bfc490640038e877c92db706484107b30932b9e48f584ed9030b68f3638
-    container_name: dinusnexus-frontend
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -52,3 +53,4 @@ services:
 
 volumes:
   pgdata:
+  visiondata:

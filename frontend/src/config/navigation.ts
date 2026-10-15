@@ -3,6 +3,7 @@ import {
   BarChart3,
   Bot,
   CheckSquare,
+  Camera,
   Database,
   LayoutDashboard,
   Network,
@@ -18,6 +19,7 @@ export interface NavigationItem {
 export const navigationItems: NavigationItem[] = [
   { label: 'Command Center', href: '/', icon: LayoutDashboard },
   { label: 'Operations', href: '/workspace/operations', icon: Network },
+  { label: 'Vision Twin', href: '/workspace/vision-twin', icon: Camera },
   { label: 'AI Agents', href: '/workspace/agents', icon: Bot },
   { label: 'Tasks & Incidents', href: '/workspace/tasks', icon: CheckSquare },
   { label: 'Approvals', href: '/workspace/approvals', icon: CheckSquare },
