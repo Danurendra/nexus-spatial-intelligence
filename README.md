@@ -29,6 +29,12 @@ investigasi IT Helpdesk dari AP tidak online. Alternatif: `/workspace/operations
 Panduan, angka baseline, konfigurasi tanpa biaya LLM, dan keterbatasan ada di
 [`docs/WORKFLOWS.md`](docs/WORKFLOWS.md#demo-campus-twin--campus-operations--it-helpdesk).
 
+## Vision Twin — Computer Vision MVP
+
+Route baru: `/workspace/vision-twin`. Operator dapat mengunggah satu frame JPEG/PNG/WebP, memilih zona kampus, lalu menjalankan deteksi pejalan kaki berbasis OpenCV. Respons memuat jumlah deteksi, bounding box, gambar beranotasi, detector, timestamp, dan provenance. Endpoint memakai OpenCV HOG sebagai baseline tanpa bobot eksternal; model YOLO ONNX dapat dikonfigurasi melalui `VISION_MODEL_PATH`.
+
+**Batasan:** ini analisis gambar statis, bukan stream CCTV live; tidak mendeteksi identitas, tidak menghasilkan occupancy terkalibrasi, tidak menyimpan frame/riwayat, dan belum memperbarui layer occupancy Campus Twin. Lihat [docs/VISION_TWIN.md](docs/VISION_TWIN.md) dan [docs/API.md](docs/API.md#vision-twin--uploaded-pedestrian-frame-analysis).
+
 ## Fitur IT Helpdesk
 
 1. Client mengirim laporan ke `POST /api/tasks` (dengan `X-API-Key`).
