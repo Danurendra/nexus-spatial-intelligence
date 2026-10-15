@@ -135,6 +135,19 @@ RBAC per-worker, queue, streaming UI progress event, sensor live, pemetaan venue
 OSM → AP yang terverifikasi, atau eksekusi fasilitas/jaringan otomatis. Hasil
 tersimpan dapat dibaca setelah refresh; kontrol input/preview tidak dipersistenkan.
 
+
+## Vision Twin: uploaded frame analysis
+
+Route `/workspace/vision-twin` runs an independent Computer Vision vertical slice:
+
+1. Operator chooses a campus zone and uploads a JPEG/PNG/WebP frame (8 MiB max).
+2. Frontend posts multipart form data to `POST /api/vision/pedestrians`.
+3. The authenticated backend validates the upload and decodes it with OpenCV.
+4. By default, OpenCV HOG detects visible pedestrians without external model weights. An operator can configure a compatible YOLO COCO ONNX export through `VISION_MODEL_PATH`.
+5. The response returns per-frame bounding boxes, an annotated image, a count, detector name, timestamp, and a provenance label.
+
+This version deliberately **does not** connect a live camera, write images or results to the database, calculate calibrated real occupancy, or automatically change the Campus Twin status/layers. The selected zone is context supplied by the operator, not a verified camera-to-building mapping. Before live integration, define permission, retention, access control, persisted observation schema, measurement calibration, and zone/camera mapping. Verify real device integration separately from this uploaded-image path.
+
 ## Operations: investigasi IT dari halaman workspace
 
 Route `/workspace/operations` mempertahankan event planner. Tab **Investigasi IT**
