@@ -16,7 +16,7 @@ from starlette.concurrency import run_in_threadpool
 from src.auth import require_api_key
 from src.twin_video import (
     DEFAULT_ZONES, VisionPipelineError, artifact_directory, decide_ticket,
-    ensure_opencv_version, get_agent_run_for_job, get_events, get_job,
+    ensure_opencv_version, get_agent_run_for_job, get_events, get_job, get_recent_jobs,
     get_preview_path, get_tickets, get_twin_state, parse_zones, process_video_file,
 )
 
@@ -127,6 +127,9 @@ async def analyze_video(
                 pass
 
 
+@router.get("/jobs", summary="List persisted video jobs")
+def list_vision_jobs(limit: int = 10) -> dict[str, Any]:
+    return {"jobs": get_recent_jobs(limit)}
 @router.get("/jobs/{job_id}", summary="Read persisted Vision Twin job summary")
 def read_vision_job(job_id: str) -> dict[str, Any]:
     job = get_job(job_id)
