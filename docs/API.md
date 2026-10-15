@@ -1,5 +1,35 @@
 # API Reference — DinusNexus Backend
 
+
+## Vision Twin — Uploaded pedestrian frame analysis
+
+### POST /api/vision/pedestrians
+
+Memproses **satu gambar yang diunggah**, bukan stream CCTV. Endpoint memerlukan autentikasi yang sama dengan workspace (X-API-Key atau bearer session) dan menerima multipart/form-data.
+
+| Field | Type | Wajib | Batas |
+|---|---|---|---|
+| file | file | yes | JPEG, PNG, WebP; maksimum 8 MiB |
+| zone_id | string | yes | 1–80 karakter; konteks zona yang dipilih user |
+| camera_label | string | no | 1–80 karakter; default Uploaded frame |
+
+Contoh:
+
+~~~bash
+curl -X POST http://127.0.0.1:8000/api/vision/pedestrians \
+  -H "X-API-Key: $DINUSNEXUS_API_KEY" \
+  -F "file=@frame.jpg" \
+  -F "zone_id=zone-A1" \
+  -F "camera_label=Koridor utara"
+~~~
+
+Respons sukses berisi people_count, koordinat bounding box dalam piksel, frame beranotasi sebagai JPEG data URL, detector, timestamp, ukuran gambar, dan daftar keterbatasan. data_label=OBSERVED_FROM_UPLOADED_IMAGE menjelaskan provenance: observasi dari satu unggahan, bukan telemetry live.
+
+Detector default adalah **OpenCV HOG pedestrian detector** (baseline klasik; tidak memerlukan bobot eksternal). Untuk model detector yang lebih kuat, VISION_MODEL_PATH dapat menunjuk ke ekspor YOLOv8/YOLOv5 COCO ONNX yang kompatibel dengan OpenCV DNN; threshold konfigurasi VISION_CONFIDENCE_THRESHOLD default 0.25. Ekspor model ONNX harus disediakan dan divalidasi oleh operator. Endpoint tidak mengunduh model secara otomatis.
+
+Error utama: 401 auth invalid, 413 unggahan/resolusi terlalu besar, 415 tipe konten tidak didukung, 400 file bukan gambar valid, 503 model/pipeline tidak tersedia. Frame tidak ditulis ke disk atau database, tidak membangun histori, dan tidak otomatis memperbarui occupancy atau status gedung; pengaitan zone_id hanya konteks yang dikirim pemakai. Jumlah deteksi bukan identitas unik maupun occupancy terkalibrasi. Pertimbangkan izin, retensi, keamanan data, dan batas penggunaan sebelum menghubungkan kamera sebenarnya.
+
+
 > Status: **implemented and tested** for the IT Helpdesk deterministic flow.
 > Base URL in local development: `http://127.0.0.1:8000`.
 > Interactive schema: `http://127.0.0.1:8000/docs` (Swagger UI) and
