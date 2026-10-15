@@ -64,13 +64,14 @@ def _detect_with_hog(frame: np.ndarray) -> list[dict[str, Any]]:
 
 
 def _detect_with_yolo_onnx(
-    frame: np.ndarray, model_path: Path
+    frame: np.ndarray, model_path: Path, network: Any = None
 ) -> list[dict[str, Any]]:
     """Run a YOLOv8 (84 x N) or YOLOv5 (85 x N) COCO ONNX model using OpenCV DNN."""
     if not model_path.is_file():
         raise FileNotFoundError(f"Configured ONNX model was not found: {model_path}")
 
-    network = cv2.dnn.readNetFromONNX(str(model_path))
+    if network is None:
+        network = cv2.dnn.readNetFromONNX(str(model_path))
     height, width = frame.shape[:2]
     scale = min(YOLO_INPUT_SIZE / width, YOLO_INPUT_SIZE / height)
     resized_width = max(1, round(width * scale))
