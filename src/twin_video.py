@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 from contextlib import closing
 import json
+import logging
 import math
 import os
 import re
@@ -19,6 +20,8 @@ import numpy as np
 
 from src.vision_api import make_person_detector
 
+
+logger = logging.getLogger(__name__)
 
 MAX_VIDEO_SECONDS = 300
 MAX_SAMPLES = 60
@@ -748,6 +751,7 @@ def process_video_file(
         result["duration_processing_seconds"] = round(elapsed, 4)
         return result
     except Exception as exc:
+        logger.exception("Vision Twin video processing failed (job_id=%s, error_type=%s)", job_id, type(exc).__name__)
         capture.release()
         elapsed = time.perf_counter() - started_perf
         error_code = exc.code if isinstance(exc, VisionPipelineError) else "VISION_PROCESSING_FAILED"
