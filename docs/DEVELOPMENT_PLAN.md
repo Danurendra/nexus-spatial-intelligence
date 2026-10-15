@@ -25,6 +25,15 @@ Pembagian kerja paralel untuk tiga anggota tim, ownership, checkpoint, dan tata 
 4. Add token usage capture and task metrics.
 5. Add tests for expected cases, missing data, invalid input, provider failure, and tool failure.
 
+### P1 add-on — Vision Twin prototype
+
+- [x] Add an authenticated endpoint for one uploaded image with input size/type limits.
+- [x] Run OpenCV HOG pedestrian detection by default; support a configured compatible YOLO ONNX model through OpenCV DNN.
+- [x] Add the Vision Twin workspace route with uploaded-image preview, annotated output, detector/provenance, error state, and explicit non-live labeling.
+- [x] Add focused API tests for authentication, unsupported image types, invalid images, successful result payload, and upload limits.
+- [ ] Run CI and review the results before merging.
+- [ ] Future: persist timestamped observations, implement retention policy, calibrate occupancy, and connect it to Campus Twin overlays only after schema and mapping are verified.
+
 ### P2 — Extend campus workers
 
 After the IT Helpdesk workflow is stable, extend shared services to document search, PMB, Quality Assurance, or other role workflows based on time and data availability. Prioritization among these additional workers: `TBD`.
