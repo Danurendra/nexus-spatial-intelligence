@@ -95,7 +95,7 @@ export function VisionTwinWorkspace() {
         </div>
         <div className="flex items-center gap-2 rounded-lg border border-border bg-white px-3 py-2 text-xs text-textSecondary">
           <ShieldCheck className="h-4 w-4 text-green-600" />
-          <span>Unggahan diproses sementara; gambar tidak disimpan oleh endpoint ini.</span>
+          <span>Gambar tidak dipersistenkan ke histori aplikasi; gunakan hanya frame yang diizinkan untuk diproses.</span>
         </div>
       </div>
 
