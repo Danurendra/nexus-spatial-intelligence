@@ -157,12 +157,31 @@ def _detect_with_yolo_onnx(
     return [mapped_boxes[index] for index in indices[:MAX_DETECTIONS]]
 
 
-def detect_people(frame: np.ndarray) -> tuple[list[dict[str, Any]], str]:
-    """Select configured OpenCV DNN model or explicit no-weights HOG baseline."""
+def make_person_detector():
+    """Create one detector instance reusable across sampled video frames."""
     configured_model = os.getenv("VISION_MODEL_PATH", "").strip()
     if configured_model:
-        return _detect_with_yolo_onnx(frame, Path(configured_model)), "OpenCV DNN · YOLO ONNX"
-    return _detect_with_hog(frame), "OpenCV HOG pedestrian detector"
+        model_path = Path(configured_model)
+        if not model_path.is_file():
+            raise FileNotFoundError(f"Configured ONNX model was not found: {model_path}")
+        network = cv2.dnn.readNetFromONNX(str(model_path))
+        def run_dnn(frame: np.ndarray) -> list[dict[str, Any]]:
+            return _detect_with_yolo_onnx(frame, model_path, network)
+        return "OpenCV DNN · YOLO ONNX", run_dnn
+
+    hog = cv2.HOGDescriptor()
+    hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
+    def run_hog(frame: np.ndarray) -> list[dict[str, Any]]:
+        boxes, _weights = hog.detectMultiScale(frame, hitThreshold=0.0, winStride=(8, 8), padding=(8, 8), scale=1.05)
+        return [
+            {"x": max(0, int(x)), "y": max(0, int(y)), "width": max(1, int(w)), "height": max(1, int(h)), "label": "person"}
+            for x, y, w, h in list(boxes)[:MAX_DETECTIONS]
+        ]
+    return "OpenCV HOG pedestrian detector", run_hog
+def detect_people(frame: np.ndarray) -> tuple[list[dict[str, Any]], str]:
+    """Run a single-frame detection with the configured OpenCV detector."""
+    detector_name, detector = make_person_detector()
+    return detector(frame), detector_name
 
 
 def _annotate(frame: np.ndarray, detections: list[dict[str, Any]]) -> str:
