@@ -990,3 +990,7 @@ app.include_router(event_router(serialize_task, persist_run, _persist_failed_tas
 from src.vision_api import router as vision_router
 
 app.include_router(vision_router)
+
+from src.twin_api import router as twin_router
+
+app.include_router(twin_router)
