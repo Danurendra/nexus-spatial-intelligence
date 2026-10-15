@@ -2,7 +2,7 @@
 
 **Status dokumen:** implementation guide untuk branch feat/opencv-vision-twin.
 **Target submission internal:** 26 Oktober 2026, sebelum 23.00 WIB.
-**Status proyek harus dinyatakan jujur:** video pipeline, polygon mapping, SQLite twin state, evidence frames, deterministic agent trace, dan UI telah ditambahkan ke branch. Eksekusi tes/CI, kalibrasi data ground truth, AWS deployment publik, dan submission Devpost masih perlu diverifikasi secara nyata.
+**Status proyek harus dinyatakan jujur:** video pipeline, polygon mapping, SQLite twin state, evidence frames, deterministic agent trace, dan UI telah ditambahkan ke branch. CI lulus pada commit `8e975517`: OpenCV 5.0.0 smoke test lulus, backend 120 passed/1 skipped, TypeScript, frontend unit tests, dan production build lulus. Ground-truth evaluation, kalibrasi polygon, AWS deployment publik, dan submission Devpost masih perlu diverifikasi secara nyata.
 
 ## 1. Tujuan MVP
 
@@ -261,7 +261,7 @@ Periksa ulang halaman resmi Devpost sebelum submission karena perubahan deadline
 
 - [x] Implementasi dasar video upload, OpenCV 5 version gate, zona polygon, state SQLite, event, agent trace, serta draft ticket review telah ditambahkan ke branch.
 - [x] Repository menambahkan tes untuk alur state/decision dan endpoint.
-- [ ] CI/test/type-check/build lulus dan hasil aktual tercatat.
+- [x] CI/test/type-check/build lulus pada commit `8e975517`: OpenCV 5.0.0, backend 120 passed/1 skipped, frontend typecheck/unit/build sukses.
 - [ ] OpenCV 5 benar-benar terverifikasi pada environment bersih.
 - [ ] Video dengan izin diproses dari upload hingga bukti zona; hasil diperiksa manual.
 - [ ] Ground truth, baseline, metrik, dan kasus gagal dihitung serta disimpan.
