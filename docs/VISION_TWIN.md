@@ -69,7 +69,7 @@ Tes endpoint mencakup autentikasi, tipe konten, gambar invalid, payload sukses, 
 - Sistem belum tersambung ke RTSP/ONVIF, CCTV, atau feed kamera real-time.
 - zone_id adalah konteks yang dipilih pengguna. Belum ada verified camera-to-building mapping pada backend.
 - people_count adalah jumlah bounding box yang dikembalikan pada frame ini, bukan orang unik atau okupansi riil yang terkalibrasi.
-- Gambar dan output tidak disimpan ke database, file system, atau histori task pada implementasi sekarang.
+- Gambar/output tidak dipersistenkan ke penyimpanan aplikasi, database, atau histori task pada implementasi sekarang. Parser multipart dapat memakai buffer upload temporer selama request, sehingga jangan mengirim gambar sensitif tanpa memahami kebijakan runtime.
 - Modul ini belum mengubah status gedung, heatmap kepadatan, atau overlay occupancy Campus Twin.
 
 ## Backlog sebelum integrasi live
